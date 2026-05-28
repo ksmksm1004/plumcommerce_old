@@ -1,0 +1,5 @@
+<%- include('partials/header') %>
+<h2>Flash Sale</h2>
+<p>Ends at: <%= endsAt %></p>
+<ul><% products.forEach(p=> { %><li><img width="70" src="/image/<%= p.image %>"/> <%= p.name %> - $<%= p.price %></li><% }) %></ul>
+<%- include('partials/footer') %>

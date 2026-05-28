@@ -1,0 +1,7 @@
+<%- include('partials/header') %>
+<h2>Cart</h2>
+<ul><% items.forEach(i=> { %><li><%= i.name %> - $<%= i.price %></li><% }) %></ul>
+<p>Total: $<%= total %></p>
+<form method="post" action="/checkout"><button>Mock Checkout</button></form>
+<% if (charge) { %><pre><%= JSON.stringify(charge,null,2) %></pre><% } %>
+<%- include('partials/footer') %>
