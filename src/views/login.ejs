@@ -1,0 +1,6 @@
+<%- include('partials/header') %>
+<h2><%= admin ? 'Admin' : 'User' %> Login</h2>
+<form method="post">
+<input name="username"/><input name="password" type="password"/><button>Login</button>
+</form>
+<%- include('partials/footer') %>

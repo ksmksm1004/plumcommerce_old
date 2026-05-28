@@ -1,0 +1,11 @@
+<%- include('../partials/header') %>
+<h2>Admin Dashboard</h2>
+<form method="post" action="/admin/upload" enctype="multipart/form-data">
+<select name="product_id">
+<% products.forEach(p=> { %><option value="<%= p.id %>"><%= p.name %></option><% }) %>
+</select>
+<input type="file" name="image"/>
+<button>Upload Image</button>
+</form>
+<ul><% products.forEach(p=> { %><li><%= p.name %> <img src="/image/<%= p.image %>" width="60"/></li><% }) %></ul>
+<%- include('../partials/footer') %>

@@ -1,0 +1,6 @@
+<%- include('partials/header') %>
+<h2><%= product.name %></h2>
+<img src="/image/<%= product.image %>" width="200"/>
+<p><%= product.description %></p><p>$<%= product.price %></p>
+<form method="post" action="/cart/add/<%= product.id %>"><button>Add to Cart</button></form>
+<%- include('partials/footer') %>

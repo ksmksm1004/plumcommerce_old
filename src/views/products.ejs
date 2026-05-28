@@ -1,0 +1,13 @@
+<%- include('partials/header') %>
+<h2>Product List</h2>
+<form method="get" action="/products">
+<input name="category" placeholder="category" value="<%= category %>"/>
+<input name="q" placeholder="search" value="<%= q %>"/>
+<button>Search</button>
+</form>
+<ul>
+<% products.forEach(p=> { %>
+<li><img src="/image/<%= p.image %>" width="80"/> <a href="/product/<%= p.id %>"><%= p.name %></a> - $<%= p.price %> [<%= p.category %>]</li>
+<% }) %>
+</ul>
+<%- include('partials/footer') %>

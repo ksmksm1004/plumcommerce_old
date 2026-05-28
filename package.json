@@ -1,0 +1,24 @@
+{
+  "name": "plumcommerce-onprem-demo",
+  "version": "1.0.0",
+  "description": "Single-server on-prem ecommerce demo for AWS migration baseline",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js",
+    "seed": "node scripts/seed.js",
+    "sample-images": "python3 scripts/generate_sample_images.py",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "memorystore": "^1.6.7",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.11.3",
+    "sharp": "^0.33.5",
+    "express-mysql-session": "^3.0.3"
+  }
+}
