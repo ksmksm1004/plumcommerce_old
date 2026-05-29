@@ -1,0 +1,11 @@
+<%- include('partials/header') %>
+<section class="form-card">
+  <h1>Create your Plum Commerce account</h1>
+  <% if (error) { %><p class="error"><%= error %></p><% } %>
+  <form method="post" action="/signup">
+    <label>Username<input name="username" autocomplete="username" required></label>
+    <label>Password<input name="password" type="password" autocomplete="new-password" required></label>
+    <button>Sign Up</button>
+  </form>
+</section>
+<%- include('partials/footer') %>

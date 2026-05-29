@@ -29,14 +29,18 @@ async function run() {
   const schema = fs.readFileSync(path.join(__dirname, '../sql/schema.sql'), 'utf-8');
   const stmts = schema.split(';').map(s => s.trim()).filter(Boolean);
   for (const s of stmts) await pool.query(s);
+  await pool.query('ALTER TABLE products ADD COLUMN thumbnail VARCHAR(255) NULL').catch(error => {
+    if (error.code !== 'ER_DUP_FIELDNAME') throw error;
+  });
 
   await pool.query("INSERT IGNORE INTO users (id, username, password, role) VALUES (1,'user1','pass123','user'),(2,'admin','admin123','admin')");
+  await pool.query('DELETE FROM cart_items');
   await pool.query('DELETE FROM products');
   await pool.query('ALTER TABLE products AUTO_INCREMENT = 1');
   for (const product of products) {
     await pool.query(
-      'INSERT INTO products (name, category, description, price, image) VALUES (?, ?, ?, ?, ?)',
-      product
+      'INSERT INTO products (name, category, description, price, image, thumbnail) VALUES (?, ?, ?, ?, ?, ?)',
+      [...product, `thumb_${product[4]}`]
     );
   }
   console.log('Seed complete');

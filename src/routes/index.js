@@ -3,12 +3,75 @@ const pool = require('../db/pool');
 const { requireUser, requireAdmin } = require('../middlewares/auth');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs/promises');
+const fsSync = require('fs');
 const sharp = require('sharp');
 const { IMAGE_DIR } = require('../config/env');
 const { mockCharge } = require('../services/paymentClient');
 
 const router = express.Router();
-const upload = multer({ dest: path.join(IMAGE_DIR, '_tmp') });
+const tmpUploadDir = path.join(IMAGE_DIR, '_tmp');
+fsSync.mkdirSync(tmpUploadDir, { recursive: true });
+const upload = multer({ dest: tmpUploadDir });
+
+async function getCategories() {
+  const [rows] = await pool.query('SELECT DISTINCT category FROM products ORDER BY category ASC');
+  return rows.map(row => row.category).filter(Boolean);
+}
+
+function normalizeCategory(body) {
+  return (body.new_category || body.category || '').trim();
+}
+
+function makeSafeFilename(originalname) {
+  const ext = path.extname(originalname).toLowerCase();
+  const base = path.basename(originalname, ext).replace(/[^a-z0-9_-]+/gi, '_').replace(/^_+|_+$/g, '') || 'product';
+  return `${Date.now()}_${base}${ext || '.jpg'}`;
+}
+
+async function saveProductImages(file) {
+  if (!file) throw new Error('Product image is required.');
+
+  const filename = makeSafeFilename(file.originalname);
+  const thumbFilename = `thumb_${filename}`;
+  const originalPath = path.join(IMAGE_DIR, filename);
+  const thumbPath = path.join(IMAGE_DIR, thumbFilename);
+
+  await sharp(file.path).rotate().toFile(originalPath);
+  await sharp(file.path).rotate().resize({ width: 360, withoutEnlargement: true }).toFile(thumbPath);
+  await fs.unlink(file.path).catch(() => {});
+
+  return { filename, thumbFilename };
+}
+
+async function getUserCartItems(userId) {
+  const [items] = await pool.query(
+    `SELECT p.id, p.name, p.price, p.image, p.thumbnail, c.quantity
+     FROM cart_items c
+     JOIN products p ON p.id = c.product_id
+     WHERE c.user_id=?
+     ORDER BY c.updated_at DESC`,
+    [userId]
+  );
+  return items;
+}
+
+async function getSessionCartItems(ids) {
+  if (!ids.length) return [];
+  const quantities = ids.reduce((acc, id) => {
+    acc[id] = (acc[id] || 0) + 1;
+    return acc;
+  }, {});
+  const productIds = Object.keys(quantities).map(Number);
+  const [products] = await pool.query('SELECT id,name,price,image,thumbnail FROM products WHERE id IN (?)', [productIds]);
+  return products.map(product => ({ ...product, quantity: quantities[product.id] || 1 }));
+}
+
+router.use((req, res, next) => {
+  res.locals.currentUser = req.session.user || null;
+  res.locals.currentAdmin = req.session.admin || null;
+  next();
+});
 
 router.get('/health', (_req, res) => res.json({ status: 'ok' }));
 router.get('/', (_req, res) => res.redirect('/products'));
@@ -16,12 +79,13 @@ router.get('/', (_req, res) => res.redirect('/products'));
 router.get('/products', async (req, res) => {
   const { category = '', q = '' } = req.query;
   const [rows] = await pool.query(
-    `SELECT id,name,price,category,image FROM products
+    `SELECT id,name,price,category,image,thumbnail FROM products
      WHERE (?='' OR category=?) AND (?='' OR name LIKE CONCAT('%',?,'%'))
      ORDER BY id DESC LIMIT 100`,
     [category, category, q, q]
   );
-  res.render('products', { products: rows, category, q });
+  const categories = await getCategories();
+  res.render('products', { products: rows, categories, category, q });
 });
 
 router.get('/product/:id', async (req, res) => {
@@ -32,64 +96,125 @@ router.get('/product/:id', async (req, res) => {
 });
 
 router.post('/cart/add/:id', async (req, res) => {
-  req.session.cart = req.session.cart || [];
-  req.session.cart.push(Number(req.params.id));
+  const productId = Number(req.params.id);
+  if (req.session.user) {
+    await pool.query(
+      `INSERT INTO cart_items (user_id, product_id, quantity)
+       VALUES (?, ?, 1)
+       ON DUPLICATE KEY UPDATE quantity=quantity+1, updated_at=CURRENT_TIMESTAMP`,
+      [req.session.user.id, productId]
+    );
+  } else {
+    req.session.cart = req.session.cart || [];
+    req.session.cart.push(productId);
+  }
   res.redirect('/cart');
 });
 
 router.get('/cart', async (req, res) => {
-  const ids = req.session.cart || [];
-  if (!ids.length) return res.render('cart', { items: [], total: 0, charge: null });
-  const [items] = await pool.query('SELECT id,name,price FROM products WHERE id IN (?)', [ids]);
-  const total = items.reduce((s, i) => s + i.price, 0);
+  const items = req.session.user
+    ? await getUserCartItems(req.session.user.id)
+    : await getSessionCartItems(req.session.cart || []);
+  const total = items.reduce((sum, item) => sum + (Number(item.price) || 0) * item.quantity, 0);
   res.render('cart', { items, total, charge: null });
 });
 
 router.post('/checkout', requireUser, async (req, res) => {
-  const ids = req.session.cart || [];
-  const [items] = ids.length ? await pool.query('SELECT price FROM products WHERE id IN (?)', [ids]) : [[]];
-  const total = items.reduce((s, i) => s + i.price, 0);
+  const items = await getUserCartItems(req.session.user.id);
+  const total = items.reduce((sum, item) => sum + (Number(item.price) || 0) * item.quantity, 0);
   const charge = await mockCharge({ amount: total, orderId: `ORDER-${Date.now()}` });
-  req.session.cart = [];
+  await pool.query('DELETE FROM cart_items WHERE user_id=?', [req.session.user.id]);
   res.render('cart', { items: [], total: 0, charge });
 });
 
 router.route('/login')
-  .get((_req, res) => res.render('login', { admin: false }))
+  .get((_req, res) => res.render('login', { admin: false, error: null }))
   .post(async (req, res) => {
-    const [[user]] = await pool.query('SELECT id,username FROM users WHERE username=? AND password=?', [req.body.username, req.body.password]);
-    if (!user) return res.status(401).send('Invalid credentials');
+    const [[user]] = await pool.query('SELECT id,username,role FROM users WHERE username=? AND password=?', [req.body.username, req.body.password]);
+    if (!user) return res.status(401).render('login', { admin: false, error: 'Invalid credentials' });
     req.session.user = user;
+    if (Array.isArray(req.session.cart) && req.session.cart.length) {
+      for (const productId of req.session.cart) {
+        await pool.query(
+          `INSERT INTO cart_items (user_id, product_id, quantity)
+           VALUES (?, ?, 1)
+           ON DUPLICATE KEY UPDATE quantity=quantity+1, updated_at=CURRENT_TIMESTAMP`,
+          [user.id, productId]
+        );
+      }
+      req.session.cart = [];
+    }
     res.redirect('/products');
   });
 
-router.route('/admin/login')
-  .get((_req, res) => res.render('login', { admin: true }))
+router.route('/signup')
+  .get((_req, res) => res.render('signup', { error: null }))
   .post(async (req, res) => {
-    if (req.body.username === 'admin' && req.body.password === 'admin123') {
+    const username = (req.body.username || '').trim();
+    const password = req.body.password || '';
+    if (!username || !password) return res.status(400).render('signup', { error: 'Username and password are required.' });
+    try {
+      const [result] = await pool.query('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [username, password, 'user']);
+      req.session.user = { id: result.insertId, username, role: 'user' };
+      res.redirect('/products');
+    } catch (error) {
+      if (error.code === 'ER_DUP_ENTRY') return res.status(409).render('signup', { error: 'Username already exists.' });
+      throw error;
+    }
+  });
+
+router.post('/logout', (req, res) => {
+  req.session.destroy(() => res.redirect('/products'));
+});
+
+router.route('/admin/login')
+  .get((_req, res) => res.render('login', { admin: true, error: null }))
+  .post(async (req, res) => {
+    const [[adminUser]] = await pool.query('SELECT id,username,role FROM users WHERE username=? AND password=? AND role=?', [req.body.username, req.body.password, 'admin']);
+    if (adminUser || (req.body.username === 'admin' && req.body.password === 'admin123')) {
       req.session.admin = { username: 'admin' };
       return res.redirect('/admin');
     }
-    res.status(401).send('Invalid admin credentials');
+    res.status(401).render('login', { admin: true, error: 'Invalid admin credentials' });
   });
 
 router.get('/admin', requireAdmin, async (_req, res) => {
-  const [products] = await pool.query('SELECT id,name,image FROM products ORDER BY id DESC LIMIT 30');
-  res.render('admin/dashboard', { products });
+  const [products] = await pool.query('SELECT id,name,category,price,image,thumbnail FROM products ORDER BY id DESC LIMIT 30');
+  const categories = await getCategories();
+  res.render('admin/dashboard', { products, categories, error: null });
+});
+
+router.post('/admin/products', requireAdmin, upload.single('image'), async (req, res) => {
+  try {
+    const category = normalizeCategory(req.body);
+    const name = (req.body.name || '').trim();
+    const description = (req.body.description || '').trim();
+    const price = Number(req.body.price);
+    if (!name || !category || !description || !Number.isFinite(price) || price < 0) {
+      throw new Error('Name, category, description, and a valid price are required.');
+    }
+    const { filename, thumbFilename } = await saveProductImages(req.file);
+    await pool.query(
+      'INSERT INTO products (name, category, description, price, image, thumbnail) VALUES (?, ?, ?, ?, ?, ?)',
+      [name, category, description, price, filename, thumbFilename]
+    );
+    res.redirect('/admin');
+  } catch (error) {
+    if (req.file) await fs.unlink(req.file.path).catch(() => {});
+    const [products] = await pool.query('SELECT id,name,category,price,image,thumbnail FROM products ORDER BY id DESC LIMIT 30');
+    const categories = await getCategories();
+    res.status(400).render('admin/dashboard', { products, categories, error: error.message });
+  }
 });
 
 router.post('/admin/upload', requireAdmin, upload.single('image'), async (req, res) => {
-  const filename = `${Date.now()}_${req.file.originalname.replace(/\s+/g, '_')}`;
-  const originalPath = path.join(IMAGE_DIR, filename);
-  const thumbPath = path.join(IMAGE_DIR, `thumb_${filename}`);
-  await sharp(req.file.path).toFile(originalPath);
-  await sharp(req.file.path).resize(240).toFile(thumbPath);
-  await pool.query('UPDATE products SET image=? WHERE id=?', [filename, req.body.product_id]);
+  const { filename, thumbFilename } = await saveProductImages(req.file);
+  await pool.query('UPDATE products SET image=?, thumbnail=? WHERE id=?', [filename, thumbFilename, req.body.product_id]);
   res.redirect('/admin');
 });
 
 router.get('/flash-sale', async (_req, res) => {
-  const [products] = await pool.query('SELECT id,name,price,image FROM products ORDER BY RAND() LIMIT 8');
+  const [products] = await pool.query('SELECT id,name,price,image,thumbnail FROM products ORDER BY RAND() LIMIT 8');
   const endsAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
   res.render('flash-sale', { products, endsAt });
 });

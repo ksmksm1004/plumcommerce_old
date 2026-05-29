@@ -1,21 +1,25 @@
 <%- include('partials/header') %>
-<h2>Cart</h2>
-<% 
-let totalPrice = 0; 
-%>
+<h1>Cart</h1>
 
-<ul>
-  <% items.forEach(i => { %>
-    <% 
-    let priceNum = Number(i.price) || 0; 
-    totalPrice += priceNum; 
-    %>
-    <li><%= i.name %> - ₩<%= priceNum.toLocaleString('ko-KR') %></li>
-  <% }) %>
-</ul>
+<% if (!items.length) { %>
+  <p class="empty-state">Your cart is empty.</p>
+<% } else { %>
+  <div class="cart-list">
+    <% items.forEach(i => { %>
+      <% const priceNum = Number(i.price) || 0; %>
+      <article class="cart-item">
+        <img src="/image/<%= i.thumbnail || i.image %>" alt="<%= i.name %>">
+        <div>
+          <h2><%= i.name %></h2>
+          <p>Quantity: <%= i.quantity %></p>
+          <p>Subtotal: ₩<%= (priceNum * i.quantity).toLocaleString('ko-KR') %></p>
+        </div>
+      </article>
+    <% }) %>
+  </div>
+<% } %>
 
-<p>Total: ₩<%= totalPrice.toLocaleString('ko-KR') %></p>
-
-<form method="post" action="/checkout"><button>Mock Checkout</button></form>
+<p class="cart-total">Total: ₩<%= Number(total).toLocaleString('ko-KR') %></p>
+<form method="post" action="/checkout"><button <%= items.length ? '' : 'disabled' %>>Mock Checkout</button></form>
 <% if (charge) { %><pre><%= JSON.stringify(charge,null,2) %></pre><% } %>
 <%- include('partials/footer') %>

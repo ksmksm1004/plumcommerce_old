@@ -1,13 +1,33 @@
 <%- include('partials/header') %>
-<h2>Product List</h2>
-<form method="get" action="/products">
-<input name="category" placeholder="category" value="<%= category %>"/>
-<input name="q" placeholder="search" value="<%= q %>"/>
-<button>Search</button>
+<section class="hero-panel">
+  <p class="eyebrow">Official Plum Commerce Storefront</p>
+  <h1>Product List</h1>
+  <p>Discover consoles, software, and accessories from Plum Commerce.</p>
+</section>
+
+<form class="filter-bar" method="get" action="/products">
+  <select name="category" aria-label="Category">
+    <option value="">All categories</option>
+    <% categories.forEach(c => { %>
+      <option value="<%= c %>" <%= category === c ? 'selected' : '' %>><%= c %></option>
+    <% }) %>
+  </select>
+  <input name="q" placeholder="Search products" value="<%= q %>"/>
+  <button>Search</button>
 </form>
-<ul>
-<% products.forEach(p=> { %>
-<li><img src="/image/<%= p.image %>" width="80"/> <a href="/product/<%= p.id %>"><%= p.name %></a> - ₩<%= Number(p.price).toLocaleString('ko-KR') %> [<%= p.category %>]</li>
-<% }) %>
-</ul>
+
+<section class="product-grid" aria-label="Products">
+  <% products.forEach(p => { %>
+    <article class="product-card">
+      <a class="product-image" href="/product/<%= p.id %>">
+        <img src="/image/<%= p.thumbnail || p.image %>" alt="<%= p.name %>">
+      </a>
+      <div class="product-card-body">
+        <span class="pill"><%= p.category %></span>
+        <h2><a href="/product/<%= p.id %>"><%= p.name %></a></h2>
+        <p class="price">₩<%= Number(p.price).toLocaleString('ko-KR') %></p>
+      </div>
+    </article>
+  <% }) %>
+</section>
 <%- include('partials/footer') %>

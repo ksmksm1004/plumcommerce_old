@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title desc">
+  <title id="title">Plum Commerce logo</title>
+  <desc id="desc">A plum shaped shopping bag logo.</desc>
+  <defs>
+    <linearGradient id="plum" x1="28" y1="140" x2="134" y2="28" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3F1748"/>
+      <stop offset="0.55" stop-color="#7A2E83"/>
+      <stop offset="1" stop-color="#B85AC4"/>
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="82" r="62" fill="#F7EEF8"/>
+  <path d="M49 61h62l9 62a12 12 0 0 1-12 14H52a12 12 0 0 1-12-14l9-62Z" fill="url(#plum)"/>
+  <path d="M61 65c0-21 12-35 29-35s29 14 29 35" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" opacity="0.9"/>
+  <path d="M81 34c4-17 16-24 34-23-1 18-12 29-34 23Z" fill="#67A85C"/>
+  <circle cx="76" cy="99" r="10" fill="#fff" opacity="0.94"/>
+  <circle cx="105" cy="99" r="10" fill="#fff" opacity="0.94"/>
+  <path d="M68 120c13 9 29 9 42 0" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" opacity="0.92"/>
+</svg>

@@ -1,11 +1,51 @@
 <%- include('../partials/header') %>
-<h2>Admin Dashboard</h2>
-<form method="post" action="/admin/upload" enctype="multipart/form-data">
-<select name="product_id">
-<% products.forEach(p=> { %><option value="<%= p.id %>"><%= p.name %></option><% }) %>
-</select>
-<input type="file" name="image"/>
-<button>Upload Image</button>
-</form>
-<ul><% products.forEach(p=> { %><li><%= p.name %> <img src="/image/<%= p.image %>" width="60"/></li><% }) %></ul>
+<h1>Admin Dashboard</h1>
+<p class="muted">Register a full product record with original and thumbnail images in one step.</p>
+
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+
+<section class="admin-grid">
+  <form class="form-card" method="post" action="/admin/products" enctype="multipart/form-data">
+    <h2>Add Product</h2>
+    <label>Name<input name="name" required></label>
+    <label>Category
+      <select name="category">
+        <option value="">Select existing category</option>
+        <% categories.forEach(c => { %><option value="<%= c %>"><%= c %></option><% }) %>
+      </select>
+    </label>
+    <label>New category<input name="new_category" placeholder="Use this to add a category"></label>
+    <label>Description<textarea name="description" rows="4" required></textarea></label>
+    <label>Price<input name="price" type="number" min="0" step="0.01" required></label>
+    <label>Product image<input type="file" name="image" accept="image/*" required></label>
+    <button>Add Product + Images</button>
+  </form>
+
+  <form class="form-card" method="post" action="/admin/upload" enctype="multipart/form-data">
+    <h2>Replace Product Image</h2>
+    <label>Product
+      <select name="product_id">
+        <% products.forEach(p => { %><option value="<%= p.id %>"><%= p.name %></option><% }) %>
+      </select>
+    </label>
+    <label>Image<input type="file" name="image" accept="image/*" required></label>
+    <button>Upload Original + Thumbnail</button>
+  </form>
+</section>
+
+<section class="admin-products">
+  <h2>Recent Products</h2>
+  <div class="product-grid compact">
+    <% products.forEach(p => { %>
+      <article class="product-card">
+        <img src="/image/<%= p.thumbnail || p.image %>" alt="<%= p.name %>">
+        <div class="product-card-body">
+          <span class="pill"><%= p.category %></span>
+          <h3><%= p.name %></h3>
+          <p>₩<%= Number(p.price).toLocaleString('ko-KR') %></p>
+        </div>
+      </article>
+    <% }) %>
+  </div>
+</section>
 <%- include('../partials/footer') %>

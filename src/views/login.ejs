@@ -1,6 +1,12 @@
 <%- include('partials/header') %>
-<h2><%= admin ? 'Admin' : 'User' %> Login</h2>
-<form method="post">
-<input name="username"/><input name="password" type="password"/><button>Login</button>
-</form>
+<section class="form-card">
+  <h1><%= admin ? 'Admin' : 'User' %> Login</h1>
+  <% if (error) { %><p class="error"><%= error %></p><% } %>
+  <form method="post">
+    <label>Username<input name="username" autocomplete="username" required></label>
+    <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+    <button>Login</button>
+  </form>
+  <% if (!admin) { %><p>New to Plum Commerce? <a href="/signup">Create an account</a>.</p><% } %>
+</section>
 <%- include('partials/footer') %>

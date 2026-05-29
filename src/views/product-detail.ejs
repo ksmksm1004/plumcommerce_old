@@ -1,6 +1,12 @@
 <%- include('partials/header') %>
-<h2><%= product.name %></h2>
-<img src="/image/<%= product.image %>" width="200"/>
-<p><%= product.description %></p><p>₩<%= Number(product.price).toLocaleString('ko-KR') %></p>
-<form method="post" action="/cart/add/<%= product.id %>"><button>Add to Cart</button></form>
+<section class="detail-layout">
+  <div class="detail-image"><img src="/image/<%= product.image %>" alt="<%= product.name %>"/></div>
+  <div>
+    <span class="pill"><%= product.category %></span>
+    <h1><%= product.name %></h1>
+    <p><%= product.description %></p>
+    <p class="price">₩<%= Number(product.price).toLocaleString('ko-KR') %></p>
+    <form method="post" action="/cart/add/<%= product.id %>"><button>Add to Cart</button></form>
+  </div>
+</section>
 <%- include('partials/footer') %>

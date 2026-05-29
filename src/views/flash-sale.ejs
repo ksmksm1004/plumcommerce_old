@@ -1,5 +1,15 @@
 <%- include('partials/header') %>
-<h2>Flash Sale</h2>
+<h1>Flash Sale</h1>
 <p>Ends at: <%= endsAt %></p>
-<ul><% products.forEach(p=> { %><li><img width="70" src="/image/<%= p.image %>"/> <%= p.name %> - ₩<%= Number(p.price).toLocaleString('ko-KR') %></li><% }) %></ul>
+<section class="product-grid compact">
+  <% products.forEach(p => { %>
+    <article class="product-card">
+      <img src="/image/<%= p.thumbnail || p.image %>" alt="<%= p.name %>">
+      <div class="product-card-body">
+        <h2><%= p.name %></h2>
+        <p class="price">₩<%= Number(p.price).toLocaleString('ko-KR') %></p>
+      </div>
+    </article>
+  <% }) %>
+</section>
 <%- include('partials/footer') %>
