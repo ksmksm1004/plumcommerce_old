@@ -5,6 +5,7 @@ const MemoryBackend = require('./session/memoryBackend');
 const DbBackend = require('./session/dbBackend');
 const { PORT, SESSION_BACKEND, SESSION_SECRET } = require('./config/env');
 const routes = require('./routes');
+const ensureSchema = require('./db/ensureSchema');
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -37,4 +38,12 @@ app.use((req, res, next) => {
 
 app.use(routes);
 
-app.listen(PORT, () => console.log(`Plum Commerce app on ${PORT}`));
+async function start() {
+  await ensureSchema();
+  app.listen(PORT, () => console.log(`Plum Commerce app on ${PORT}`));
+}
+
+start().catch(error => {
+  console.error('Failed to start Plum Commerce app', error);
+  process.exit(1);
+});
