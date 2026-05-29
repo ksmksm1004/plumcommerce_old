@@ -42,7 +42,10 @@
         <div class="product-card-body">
           <span class="pill"><%= p.category %></span>
           <h3><%= p.name %></h3>
-          <p>₩<%= Number(p.price).toLocaleString('ko-KR') %></p>
+          <p class="price">₩<%= Number(p.price).toLocaleString('ko-KR') %></p>
+          <form method="post" action="/admin/products/<%= p.id %>/delete" onsubmit="return confirm('Delete this product?');">
+            <button type="submit" class="danger-button">Delete</button>
+          </form>
         </div>
       </article>
     <% }) %>

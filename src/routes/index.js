@@ -44,6 +44,30 @@ async function saveProductImages(file) {
   return { filename, thumbFilename };
 }
 
+async function unlinkImageFile(filename) {
+  if (!filename) return;
+
+  const root = path.resolve(IMAGE_DIR);
+  const target = path.resolve(root, path.basename(filename));
+  if (!target.startsWith(`${root}${path.sep}`)) return;
+
+  await fs.unlink(target).catch(error => {
+    if (error.code !== 'ENOENT') throw error;
+  });
+}
+
+async function unlinkImagesIfUnused(filenames) {
+  const uniqueFilenames = [...new Set(filenames.filter(Boolean))];
+
+  for (const filename of uniqueFilenames) {
+    const [[row]] = await pool.query(
+      'SELECT COUNT(*) AS count FROM products WHERE image=? OR thumbnail=?',
+      [filename, filename]
+    );
+    if (Number(row.count) === 0) await unlinkImageFile(filename);
+  }
+}
+
 async function getUserCartItems(userId) {
   const [items] = await pool.query(
     `SELECT p.id, p.name, p.price, p.image, p.thumbnail, c.quantity
@@ -210,6 +234,18 @@ router.post('/admin/products', requireAdmin, upload.single('image'), async (req,
 router.post('/admin/upload', requireAdmin, upload.single('image'), async (req, res) => {
   const { filename, thumbFilename } = await saveProductImages(req.file);
   await pool.query('UPDATE products SET image=?, thumbnail=? WHERE id=?', [filename, thumbFilename, req.body.product_id]);
+  res.redirect('/admin');
+});
+
+router.post('/admin/products/:id/delete', requireAdmin, async (req, res) => {
+  const [[product]] = await pool.query('SELECT image,thumbnail FROM products WHERE id=?', [req.params.id]);
+  if (!product) return res.redirect('/admin');
+
+  await pool.query('DELETE FROM cart_items WHERE product_id=?', [req.params.id]);
+  await pool.query('DELETE FROM products WHERE id=?', [req.params.id]);
+  await unlinkImagesIfUnused([product.image, product.thumbnail]).catch(error => {
+    console.warn('Failed to remove deleted product images', error);
+  });
   res.redirect('/admin');
 });
 

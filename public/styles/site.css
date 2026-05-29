@@ -52,6 +52,7 @@ label { display: grid; gap: 0.4rem; font-weight: 700; }
 .auth-links { justify-content: flex-end; }
 .auth-links form { margin: 0; }
 .link-button { background: none; color: var(--plum); padding: 0; }
+.danger-button { background: #b3261e; }
 .brand { align-items: center; color: var(--plum-dark); display: flex; flex-direction: column; font-weight: 900; letter-spacing: 0.02em; }
 .brand img { height: 58px; width: 58px; }
 
