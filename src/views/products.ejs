@@ -7,7 +7,7 @@
 </form>
 <ul>
 <% products.forEach(p=> { %>
-<li><img src="/image/<%= p.image %>" width="80"/> <a href="/product/<%= p.id %>"><%= p.name %></a> - $<%= p.price %> [<%= p.category %>]</li>
+<li><img src="/image/<%= p.image %>" width="80"/> <a href="/product/<%= p.id %>"><%= p.name %></a> - ₩<%= Number(p.price).toLocaleString('ko-KR') %> [<%= p.category %>]</li>
 <% }) %>
 </ul>
 <%- include('partials/footer') %>
