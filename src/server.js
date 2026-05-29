@@ -29,6 +29,12 @@ app.use(session({
   }
 }));
 
+app.use((req, res, next) => {
+  res.locals.currentUser = req.session.user || null;
+  res.locals.currentAdmin = req.session.admin || null;
+  next();
+});
+
 app.use(routes);
 
 app.listen(PORT, () => console.log(`Plum Commerce app on ${PORT}`));
