@@ -1,7 +1,21 @@
 <%- include('partials/header') %>
 <h2>Cart</h2>
-<ul><% items.forEach(i=> { %><li><%= i.name %> - $<%= i.price %></li><% }) %></ul>
-<p>Total: $<%= total %></p>
+<% 
+let totalPrice = 0; 
+%>
+
+<ul>
+  <% items.forEach(i => { %>
+    <% 
+    let priceNum = Number(i.price) || 0; 
+    totalPrice += priceNum; 
+    %>
+    <li><%= i.name %> - ₩<%= priceNum.toLocaleString('ko-KR') %></li>
+  <% }) %>
+</ul>
+
+<p>Total: ₩<%= totalPrice.toLocaleString('ko-KR') %></p>
+
 <form method="post" action="/checkout"><button>Mock Checkout</button></form>
 <% if (charge) { %><pre><%= JSON.stringify(charge,null,2) %></pre><% } %>
 <%- include('partials/footer') %>
