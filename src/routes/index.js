@@ -29,11 +29,23 @@ function makeSafeFilename(originalname) {
   return `${Date.now()}_${base}${ext || '.jpg'}`;
 }
 
+function makeThumbnailFilename(filename) {
+  if (!filename || filename.startsWith('thumb_')) return filename;
+  return `thumb_${filename}`;
+}
+
+function preferThumbnail(product) {
+  return {
+    ...product,
+    thumbnail: product.thumbnail || makeThumbnailFilename(product.image)
+  };
+}
+
 async function saveProductImages(file) {
   if (!file) throw new Error('Product image is required.');
 
   const filename = makeSafeFilename(file.originalname);
-  const thumbFilename = `thumb_${filename}`;
+  const thumbFilename = makeThumbnailFilename(filename);
   const originalPath = path.join(IMAGE_DIR, filename);
   const thumbPath = path.join(IMAGE_DIR, thumbFilename);
 
@@ -77,7 +89,7 @@ async function getUserCartItems(userId) {
      ORDER BY c.updated_at DESC`,
     [userId]
   );
-  return items;
+  return items.map(preferThumbnail);
 }
 
 async function getSessionCartItems(ids) {
@@ -88,7 +100,7 @@ async function getSessionCartItems(ids) {
   }, {});
   const productIds = Object.keys(quantities).map(Number);
   const [products] = await pool.query('SELECT id,name,price,image,thumbnail FROM products WHERE id IN (?)', [productIds]);
-  return products.map(product => ({ ...product, quantity: quantities[product.id] || 1 }));
+  return products.map(product => ({ ...preferThumbnail(product), quantity: quantities[product.id] || 1 }));
 }
 
 router.use((req, res, next) => {
@@ -109,7 +121,7 @@ router.get('/products', async (req, res) => {
     [category, category, q, q]
   );
   const categories = await getCategories();
-  res.render('products', { products: rows, categories, category, q });
+  res.render('products', { products: rows.map(preferThumbnail), categories, category, q });
 });
 
 router.get('/product/:id', async (req, res) => {
@@ -252,7 +264,7 @@ router.post('/admin/products/:id/delete', requireAdmin, async (req, res) => {
 router.get('/flash-sale', async (_req, res) => {
   const [products] = await pool.query('SELECT id,name,price,image,thumbnail FROM products ORDER BY RAND() LIMIT 8');
   const endsAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-  res.render('flash-sale', { products, endsAt });
+  res.render('flash-sale', { products: products.map(preferThumbnail), endsAt });
 });
 
 module.exports = router;
