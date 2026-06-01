@@ -4,7 +4,8 @@ function requireUser(req, res, next) {
 }
 
 function requireAdmin(req, res, next) {
-  if (!req.session.admin) return res.redirect('/admin/login');
+  if (!req.session.user) return res.redirect('/login');
+  if (req.session.user.role !== 'admin') return res.redirect('/products');
   next();
 }
 

@@ -32,7 +32,7 @@ app.use(session({
 
 app.use((req, res, next) => {
   res.locals.currentUser = req.session.user || null;
-  res.locals.currentAdmin = req.session.admin || null;
+  res.locals.currentAdmin = req.session.user?.role === 'admin' ? req.session.user : null;
   next();
 });
 

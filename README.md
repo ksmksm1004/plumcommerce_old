@@ -14,7 +14,7 @@ Plum Commerce의 기존 온프레미스 이커머스(단일 서버) 데모입니
 - 상품 상세 `/product/:id`
 - 장바구니 `/cart`
 - 사용자 로그인 `/login`
-- 관리자 로그인 `/admin/login`
+- 로그인 `/login` (admin 계정은 로그인 후 `/admin`으로 이동)
 - 관리자 이미지 업로드 + thumbnail 생성 `/admin`
 - Flash Sale(순간 트래픽 설명용) `/flash-sale`
 - Health check `/health`

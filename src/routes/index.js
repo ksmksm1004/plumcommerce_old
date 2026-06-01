@@ -105,7 +105,7 @@ async function getSessionCartItems(ids) {
 
 router.use((req, res, next) => {
   res.locals.currentUser = req.session.user || null;
-  res.locals.currentAdmin = req.session.admin || null;
+  res.locals.currentAdmin = req.session.user?.role === 'admin' ? req.session.user : null;
   next();
 });
 
@@ -163,13 +163,24 @@ router.post('/checkout', requireUser, async (req, res) => {
   res.render('cart', { items: [], total: 0, charge });
 });
 
+function redirectAfterLogin(req, res) {
+  if (req.session.user?.role === 'admin') return res.redirect('/admin');
+  return res.redirect('/products');
+}
+
 router.route('/login')
-  .get((_req, res) => res.render('login', { admin: false, error: null }))
+  .get((req, res) => {
+    if (req.session.user) return redirectAfterLogin(req, res);
+    res.render('login', { error: null });
+  })
   .post(async (req, res) => {
+    if (req.session.user) return redirectAfterLogin(req, res);
+
     const [[user]] = await pool.query('SELECT id,username,role FROM users WHERE username=? AND password=?', [req.body.username, req.body.password]);
-    if (!user) return res.status(401).render('login', { admin: false, error: 'Invalid credentials' });
+    if (!user) return res.status(401).render('login', { error: 'Invalid credentials' });
+
     req.session.user = user;
-    if (Array.isArray(req.session.cart) && req.session.cart.length) {
+    if (user.role !== 'admin' && Array.isArray(req.session.cart) && req.session.cart.length) {
       for (const productId of req.session.cart) {
         await pool.query(
           `INSERT INTO cart_items (user_id, product_id, quantity)
@@ -180,7 +191,7 @@ router.route('/login')
       }
       req.session.cart = [];
     }
-    res.redirect('/products');
+    redirectAfterLogin(req, res);
   });
 
 router.route('/signup')
@@ -203,16 +214,8 @@ router.post('/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/products'));
 });
 
-router.route('/admin/login')
-  .get((_req, res) => res.render('login', { admin: true, error: null }))
-  .post(async (req, res) => {
-    const [[adminUser]] = await pool.query('SELECT id,username,role FROM users WHERE username=? AND password=? AND role=?', [req.body.username, req.body.password, 'admin']);
-    if (adminUser || (req.body.username === 'admin' && req.body.password === 'admin123')) {
-      req.session.admin = { username: 'admin' };
-      return res.redirect('/admin');
-    }
-    res.status(401).render('login', { admin: true, error: 'Invalid admin credentials' });
-  });
+router.get('/admin/login', (_req, res) => res.redirect('/login'));
+router.post('/admin/login', (_req, res) => res.redirect('/login'));
 
 router.get('/admin', requireAdmin, async (_req, res) => {
   const [products] = await pool.query('SELECT id,name,category,price,image,thumbnail FROM products ORDER BY id DESC LIMIT 30');
