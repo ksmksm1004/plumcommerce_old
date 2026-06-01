@@ -12,6 +12,7 @@ const router = express.Router();
 const tmpUploadDir = path.join(IMAGE_DIR, '_tmp');
 fsSync.mkdirSync(tmpUploadDir, { recursive: true });
 const upload = multer({ dest: tmpUploadDir });
+const uploadProductImages = upload.any();
 
 async function getCategories() {
   const [rows] = await pool.query('SELECT DISTINCT category FROM products ORDER BY category ASC');
@@ -50,8 +51,9 @@ async function saveUploadedImage(file) {
 }
 
 async function saveProductImages(files) {
-  const imageFile = files?.image?.[0];
-  const thumbnailFile = files?.thumbnail?.[0];
+  const uploadedFiles = Array.isArray(files) ? files : Object.values(files || {}).flat();
+  const imageFile = uploadedFiles.find(file => file.fieldname === 'image');
+  const thumbnailFile = uploadedFiles.find(file => file.fieldname === 'thumbnail');
   if (!imageFile || !thumbnailFile) throw new Error('Product image and thumbnail are required.');
   if (makeSafeFilename(imageFile.originalname) === makeSafeFilename(thumbnailFile.originalname)) {
     throw new Error('Product image and thumbnail filenames must be different.');
@@ -64,7 +66,7 @@ async function saveProductImages(files) {
 }
 
 async function removeUploadedFiles(files) {
-  const uploadedFiles = Object.values(files || {}).flat();
+  const uploadedFiles = Array.isArray(files) ? files : Object.values(files || {}).flat();
   for (const file of uploadedFiles) {
     await fs.unlink(file.path).catch(() => {});
   }
@@ -244,7 +246,7 @@ router.get('/admin', requireAdmin, async (_req, res) => {
   res.render('admin/dashboard', { products, categories, error: null });
 });
 
-router.post('/admin/products', requireAdmin, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }]), async (req, res) => {
+router.post('/admin/products', requireAdmin, uploadProductImages, async (req, res) => {
   try {
     const category = normalizeCategory(req.body);
     const name = (req.body.name || '').trim();
@@ -267,7 +269,7 @@ router.post('/admin/products', requireAdmin, upload.fields([{ name: 'image', max
   }
 });
 
-router.post('/admin/upload', requireAdmin, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }]), async (req, res) => {
+router.post('/admin/upload', requireAdmin, uploadProductImages, async (req, res) => {
   try {
     const { filename, thumbFilename } = await saveProductImages(req.files);
     await pool.query('UPDATE products SET image=?, thumbnail=? WHERE id=?', [filename, thumbFilename, req.body.product_id]);
