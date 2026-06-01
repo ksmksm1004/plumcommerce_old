@@ -89,6 +89,25 @@ label { display: grid; gap: 0.4rem; font-weight: 700; }
 .product-card h2, .product-card h3 { font-size: 1.05rem; margin: 0.6rem 0; }
 .pill { background: var(--plum-light); border-radius: 999px; color: var(--plum-dark); display: inline-flex; font-size: 0.8rem; font-weight: 800; padding: 0.25rem 0.65rem; }
 .price { color: var(--plum-dark); font-size: 1.2rem; font-weight: 900; }
+.price-row {
+  align-items: center;
+  display: flex;
+  gap: 0.65rem;
+  justify-content: space-between;
+}
+.price-row .price { margin: 0; }
+.quick-cart-form { flex: 0 0 auto; margin: 0; }
+.quick-cart-button {
+  align-items: center;
+  border-radius: 50%;
+  display: inline-flex;
+  font-size: 1.15rem;
+  height: 2rem;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  width: 2rem;
+}
 
 .detail-layout { align-items: center; display: grid; gap: 2rem; grid-template-columns: minmax(260px, 1fr) 1fr; }
 .detail-image img { border-radius: 28px; box-shadow: 0 18px 50px rgba(63, 23, 72, 0.14); width: 100%; }

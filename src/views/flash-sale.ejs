@@ -7,7 +7,12 @@
       <img src="/image/<%= p.thumbnail || p.image %>" alt="<%= p.name %>">
       <div class="product-card-body">
         <h2><%= p.name %></h2>
-        <p class="price">₩<%= Number(p.price).toLocaleString('ko-KR') %></p>
+        <div class="price-row">
+          <p class="price">₩<%= Number(p.price).toLocaleString('ko-KR') %></p>
+          <form method="post" action="/cart/add/<%= p.id %>" class="quick-cart-form">
+            <button type="submit" class="quick-cart-button" aria-label="Add <%= p.name %> to cart">+</button>
+          </form>
+        </div>
       </div>
     </article>
   <% }) %>
