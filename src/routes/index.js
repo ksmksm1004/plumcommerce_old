@@ -5,7 +5,6 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs/promises');
 const fsSync = require('fs');
-const sharp = require('sharp');
 const { IMAGE_DIR } = require('../config/env');
 const { mockCharge } = require('../services/paymentClient');
 
@@ -26,7 +25,7 @@ function normalizeCategory(body) {
 function makeSafeFilename(originalname) {
   const ext = path.extname(originalname).toLowerCase();
   const base = path.basename(originalname, ext).replace(/[^a-z0-9_-]+/gi, '_').replace(/^_+|_+$/g, '') || 'product';
-  return `${Date.now()}_${base}${ext || '.jpg'}`;
+  return `${base}${ext || '.jpg'}`;
 }
 
 function makeThumbnailFilename(filename) {
@@ -41,19 +40,34 @@ function preferThumbnail(product) {
   };
 }
 
-async function saveProductImages(file) {
-  if (!file) throw new Error('Product image is required.');
-
+async function saveUploadedImage(file) {
   const filename = makeSafeFilename(file.originalname);
-  const thumbFilename = makeThumbnailFilename(filename);
-  const originalPath = path.join(IMAGE_DIR, filename);
-  const thumbPath = path.join(IMAGE_DIR, thumbFilename);
+  const targetPath = path.join(IMAGE_DIR, filename);
 
-  await sharp(file.path).rotate().toFile(originalPath);
-  await sharp(file.path).rotate().resize({ width: 360, withoutEnlargement: true }).toFile(thumbPath);
-  await fs.unlink(file.path).catch(() => {});
+  await fs.rename(file.path, targetPath);
+
+  return filename;
+}
+
+async function saveProductImages(files) {
+  const imageFile = files?.image?.[0];
+  const thumbnailFile = files?.thumbnail?.[0];
+  if (!imageFile || !thumbnailFile) throw new Error('Product image and thumbnail are required.');
+  if (makeSafeFilename(imageFile.originalname) === makeSafeFilename(thumbnailFile.originalname)) {
+    throw new Error('Product image and thumbnail filenames must be different.');
+  }
+
+  const filename = await saveUploadedImage(imageFile);
+  const thumbFilename = await saveUploadedImage(thumbnailFile);
 
   return { filename, thumbFilename };
+}
+
+async function removeUploadedFiles(files) {
+  const uploadedFiles = Object.values(files || {}).flat();
+  for (const file of uploadedFiles) {
+    await fs.unlink(file.path).catch(() => {});
+  }
 }
 
 async function unlinkImageFile(filename) {
@@ -230,7 +244,7 @@ router.get('/admin', requireAdmin, async (_req, res) => {
   res.render('admin/dashboard', { products, categories, error: null });
 });
 
-router.post('/admin/products', requireAdmin, upload.single('image'), async (req, res) => {
+router.post('/admin/products', requireAdmin, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }]), async (req, res) => {
   try {
     const category = normalizeCategory(req.body);
     const name = (req.body.name || '').trim();
@@ -239,24 +253,31 @@ router.post('/admin/products', requireAdmin, upload.single('image'), async (req,
     if (!name || !category || !description || !Number.isFinite(price) || price < 0) {
       throw new Error('Name, category, description, and a valid price are required.');
     }
-    const { filename, thumbFilename } = await saveProductImages(req.file);
+    const { filename, thumbFilename } = await saveProductImages(req.files);
     await pool.query(
       'INSERT INTO products (name, category, description, price, image, thumbnail) VALUES (?, ?, ?, ?, ?, ?)',
       [name, category, description, price, filename, thumbFilename]
     );
     res.redirect('/admin');
   } catch (error) {
-    if (req.file) await fs.unlink(req.file.path).catch(() => {});
+    await removeUploadedFiles(req.files);
     const [products] = await pool.query('SELECT id,name,category,price,image,thumbnail FROM products ORDER BY id DESC LIMIT 30');
     const categories = await getCategories();
     res.status(400).render('admin/dashboard', { products, categories, error: error.message });
   }
 });
 
-router.post('/admin/upload', requireAdmin, upload.single('image'), async (req, res) => {
-  const { filename, thumbFilename } = await saveProductImages(req.file);
-  await pool.query('UPDATE products SET image=?, thumbnail=? WHERE id=?', [filename, thumbFilename, req.body.product_id]);
-  res.redirect('/admin');
+router.post('/admin/upload', requireAdmin, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }]), async (req, res) => {
+  try {
+    const { filename, thumbFilename } = await saveProductImages(req.files);
+    await pool.query('UPDATE products SET image=?, thumbnail=? WHERE id=?', [filename, thumbFilename, req.body.product_id]);
+    res.redirect('/admin');
+  } catch (error) {
+    await removeUploadedFiles(req.files);
+    const [products] = await pool.query('SELECT id,name,category,price,image,thumbnail FROM products ORDER BY id DESC LIMIT 30');
+    const categories = await getCategories();
+    res.status(400).render('admin/dashboard', { products, categories, error: error.message });
+  }
 });
 
 router.post('/admin/products/:id/delete', requireAdmin, async (req, res) => {
