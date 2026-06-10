@@ -1,0 +1,12 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22 # 사용 중이신 Node.js 버전과 일치시킵니다.
+  build:
+    commands:
+      - echo Build started on `date`
+artifacts:
+  files:
+    - '**/*' # 모든 소스코드를 압축하여 배포 아티팩트로 사용합니다.

@@ -2,13 +2,13 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: /opt/plumcommerce
-file_exists_behavior: OVERWRITE
+    destination: /home/ssm-user/plumcommerce_old # 🌟 실제 작동 경로로 변경
+    file_exists_behavior: OVERWRITE # 🌟 files 블록과 들여쓰기 라인 정렬 (오류 수정)
 permissions:
-  - object: /opt/plumcommerce
+  - object: /home/ssm-user/plumcommerce_old # 🌟 실제 작동 경로로 변경
     pattern: "**"
-    owner: ec2-user
-    group: ec2-user
+    owner: ssm-user # 🌟 현재 EC2 계정인 ssm-user로 변경
+    group: ssm-user # 🌟 현재 EC2 계정인 ssm-user로 변경
 hooks:
   BeforeInstall:
     - location: scripts/codedeploy_stop.sh
