@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const pool = require('./pool');
+const { writerPool: pool } = require('./pool');
 
 async function runStatementsFromFile(filePath) {
   const sql = fs.readFileSync(filePath, 'utf8');

@@ -3,7 +3,9 @@ const path = require('path');
 const session = require('express-session');
 const MemoryBackend = require('./session/memoryBackend');
 const DbBackend = require('./session/dbBackend');
-const { PORT, SESSION_BACKEND, SESSION_SECRET } = require('./config/env');
+const ValkeyBackend = require('./session/valkeyBackend');
+const { imageUrl } = require('./services/imageStorage');
+const { PORT, SESSION_BACKEND, SESSION_SECRET, AUTO_MIGRATE_SCHEMA } = require('./config/env');
 const routes = require('./routes');
 const ensureSchema = require('./db/ensureSchema');
 
@@ -15,7 +17,10 @@ app.use('/image', express.static(path.resolve('./public/image')));
 app.use('/styles', express.static(path.resolve('./public/styles')));
 app.use('/assets', express.static(path.resolve('./public/assets')));
 
-const backend = SESSION_BACKEND === 'db' ? new DbBackend() : new MemoryBackend();
+const backends = { memory: MemoryBackend, db: DbBackend, valkey: ValkeyBackend };
+const Backend = backends[SESSION_BACKEND];
+if (!Backend) throw new Error(`Unsupported SESSION_BACKEND: ${SESSION_BACKEND}`);
+const backend = new Backend();
 app.use(session({
   secret: SESSION_SECRET,
   name: 'plum.sid',
@@ -31,6 +36,7 @@ app.use(session({
 }));
 
 app.use((req, res, next) => {
+  res.locals.imageUrl = imageUrl;
   res.locals.currentUser = req.session.user || null;
   res.locals.currentAdmin = req.session.user?.role === 'admin' ? req.session.user : null;
   next();
@@ -39,7 +45,7 @@ app.use((req, res, next) => {
 app.use(routes);
 
 async function start() {
-  await ensureSchema();
+  if (AUTO_MIGRATE_SCHEMA) await ensureSchema();
   app.listen(PORT, () => console.log(`Plum Commerce app on ${PORT}`));
 }
 

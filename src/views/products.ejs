@@ -20,7 +20,7 @@
   <% products.forEach(p => { %>
     <article class="product-card">
       <a class="product-image" href="/product/<%= p.id %>">
-        <img src="/image/<%= p.thumbnail || p.image %>" alt="<%= p.name %>">
+        <img src="<%= imageUrl(p.thumbnail || p.image) %>" alt="<%= p.name %>">
       </a>
       <div class="product-card-body">
         <span class="pill"><%= p.category %></span>

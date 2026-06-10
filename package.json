@@ -1,7 +1,7 @@
 {
   "name": "plumcommerce-onprem-demo",
   "version": "1.0.0",
-  "description": "Single-server on-prem ecommerce demo for AWS migration baseline",
+  "description": "AWS-ready ecommerce application using Aurora, S3, and ElastiCache",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
@@ -18,6 +18,8 @@
     "memorystore": "^1.6.7",
     "multer": "^1.4.5-lts.1",
     "mysql2": "^3.11.3",
-    "express-mysql-session": "^3.0.3"
+    "express-mysql-session": "^3.0.3",
+    "@aws-sdk/client-s3": "^3.828.0",
+    "iovalkey": "^0.3.1"
   }
 }

@@ -4,7 +4,7 @@
 <section class="product-grid compact">
   <% products.forEach(p => { %>
     <article class="product-card">
-      <img src="/image/<%= p.thumbnail || p.image %>" alt="<%= p.name %>">
+      <img src="<%= imageUrl(p.thumbnail || p.image) %>" alt="<%= p.name %>">
       <div class="product-card-body">
         <h2><%= p.name %></h2>
         <div class="price-row">

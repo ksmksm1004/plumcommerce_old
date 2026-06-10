@@ -1,0 +1,20 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "UploadOriginalProductImages",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject"],
+      "Resource": "arn:aws:s3:::sm-plum-615299743460-ap-northeast-2-an/image/origin/*"
+    },
+    {
+      "Sid": "DeleteProductImages",
+      "Effect": "Allow",
+      "Action": ["s3:DeleteObject"],
+      "Resource": [
+        "arn:aws:s3:::sm-plum-615299743460-ap-northeast-2-an/image/origin/*",
+        "arn:aws:s3:::sm-plum-615299743460-ap-northeast-2-an/image/thumbnail/*"
+      ]
+    }
+  ]
+}
