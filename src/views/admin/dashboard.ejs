@@ -1,6 +1,6 @@
 <%- include('../partials/header') %>
 <h1>Admin Dashboard</h1>
-<p class="muted">Register a full product record with prepared original and thumbnail images in one step.</p>
+<p class="muted">Upload an original product image. S3 event processing creates the thumbnail automatically.</p>
 
 <% if (error) { %><p class="error"><%= error %></p><% } %>
 
@@ -18,8 +18,7 @@
     <label>Description<textarea name="description" rows="4" required></textarea></label>
     <label>Price<input name="price" type="number" min="0" step="0.01" required></label>
     <label>Product image<input type="file" name="image" accept="image/*" required></label>
-    <label>Product thumbnail<input type="file" name="thumbnail" accept="image/*" required></label>
-    <button>Add Product + Images</button>
+    <button>Add Product + Original Image</button>
   </form>
 
   <form class="form-card" method="post" action="/admin/upload" enctype="multipart/form-data">
@@ -30,8 +29,7 @@
       </select>
     </label>
     <label>Image<input type="file" name="image" accept="image/*" required></label>
-    <label>Thumbnail<input type="file" name="thumbnail" accept="image/*" required></label>
-    <button>Upload Original + Thumbnail</button>
+    <button>Upload Original Image</button>
   </form>
 </section>
 
@@ -40,7 +38,7 @@
   <div class="product-grid compact">
     <% products.forEach(p => { %>
       <article class="product-card">
-        <img src="/image/<%= p.thumbnail || p.image %>" alt="<%= p.name %>">
+        <img src="<%= imageUrl(p.thumbnail || p.image) %>" alt="<%= p.name %>">
         <div class="product-card-body">
           <span class="pill"><%= p.category %></span>
           <h3><%= p.name %></h3>

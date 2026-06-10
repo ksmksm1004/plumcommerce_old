@@ -8,7 +8,7 @@
     <% items.forEach(i => { %>
       <% const priceNum = Number(i.price) || 0; %>
       <article class="cart-item">
-        <img src="/image/<%= i.thumbnail || i.image %>" alt="<%= i.name %>">
+        <img src="<%= imageUrl(i.thumbnail || i.image) %>" alt="<%= i.name %>">
         <div>
           <h2><%= i.name %></h2>
           <p>Quantity: <%= i.quantity %></p>

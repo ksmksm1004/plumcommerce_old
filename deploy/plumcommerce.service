@@ -1,0 +1,17 @@
+[Unit]
+Description=Plum Commerce
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ec2-user
+Group=ec2-user
+WorkingDirectory=/opt/plumcommerce
+EnvironmentFile=/opt/plumcommerce/.env
+ExecStart=/usr/bin/node /opt/plumcommerce/src/server.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,6 +1,6 @@
 <%- include('partials/header') %>
 <section class="detail-layout">
-  <div class="detail-image"><img src="/image/<%= product.image %>" alt="<%= product.name %>"/></div>
+  <div class="detail-image"><img src="<%= imageUrl(product.image) %>" alt="<%= product.name %>"/></div>
   <div>
     <span class="pill"><%= product.category %></span>
     <h1><%= product.name %></h1>
