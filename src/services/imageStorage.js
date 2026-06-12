@@ -50,11 +50,20 @@ function thumbnailKeyForImage(key) {
   return `${S3.thumbnailPrefix}/${key.slice(S3.originPrefix.length + 1)}`;
 }
 
+function storageKeyForImage(key) {
+  if (key.startsWith('image/')) return key.replace(/^\/+/, '');
+
+  const filename = path.basename(key);
+  const prefix = filename.startsWith('thumb_') ? S3.thumbnailPrefix : S3.originPrefix;
+  return `${prefix}/${filename}`;
+}
+
 function imageUrl(key) {
   if (!key) return '';
   if (/^https?:\/\//i.test(key)) return key;
-  if (!key.startsWith('image/')) return `/image/${encodeURIComponent(path.basename(key))}`;
-  return `${S3.publicBaseUrl}/${key.split('/').map(encodeURIComponent).join('/')}`;
+
+  const storageKey = storageKeyForImage(key);
+  return `${S3.publicBaseUrl}/${storageKey.split('/').map(encodeURIComponent).join('/')}`;
 }
 
 module.exports = { uploadOriginal, deleteImages, imageUrl, thumbnailKeyForImage };
