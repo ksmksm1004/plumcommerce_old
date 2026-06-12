@@ -1,9 +1,10 @@
 version: 0.0
 os: linux
+file_exists_behavior: OVERWRITE
+
 files:
   - source: /
     destination: /home/ssm-user/plumcommerce_old # 🌟 실제 작동 경로로 변경
-    file_exists_behavior: OVERWRITE # 🌟 files 블록과 들여쓰기 라인 정렬 (오류 수정)
 permissions:
   - object: /home/ssm-user/plumcommerce_old # 🌟 실제 작동 경로로 변경
     pattern: "**"
