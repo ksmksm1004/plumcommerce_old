@@ -7,7 +7,11 @@ function createPool(config) {
     connectionLimit: 10,
     waitForConnections: true,
     enableKeepAlive: true,
-    keepAliveInitialDelay: 0
+    keepAliveInitialDelay: 0,
+
+    ssl: {
+      rejectUnauthorized: false
+    }
   });
 }
 
