@@ -16,6 +16,9 @@ hooks:
       timeout: 60
       runas: root
   AfterInstall:
+    - location: scripts/inject_env.sh
+      timeout: 120
+      rusas: root
     - location: scripts/codedeploy_install.sh
       timeout: 600
       runas: root
