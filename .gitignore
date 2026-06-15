@@ -2,6 +2,7 @@ node_modules/
 .env
 npm-debug.log*
 .env.bak
+src/certs/global-bundle.pem
 
 __pycache__/
 *.pyc
