@@ -42,3 +42,7 @@ echo "==== .env 파일 다운로드 및 복사 성공 ===="
 # 소유권을 ssm-user로 지정하고 보안 권한(600)을 설정합니다.
 chown ssm-user:ssm-user "$TARGET_DIR/.env"
 chmod 600 "$TARGET_DIR/.env"
+
+mkdir -p "$TARGET_DIR/src/certs"
+curl -s "https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem" -o "$TARGET_DIR/src/certs/global-bundle.pem"
+chown -R ssm-user:ssm-user "$TARGET_DIR/src/certs"

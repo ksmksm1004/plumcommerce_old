@@ -1,5 +1,7 @@
 const mysql = require('mysql2/promise');
 const { DB } = require('../config/env');
+const fs = require('fs');
+const path = require('path');
 
 function createPool(config) {
   return mysql.createPool({
@@ -10,7 +12,8 @@ function createPool(config) {
     keepAliveInitialDelay: 0,
 
     ssl: {
-      rejectUnauthorized: false
+      rejectUnauthorized: true,
+      ca: [fs.readFileSync(path.join(__dirname, '../certs/global-bundle.pem'))]
     }
   });
 }
